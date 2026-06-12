@@ -25,11 +25,10 @@ ALLOWED_TAGS = {
     "Text Editor", "Tracking", "UV", "User Interface"
 }
 
-def _tag_to_prop_name(tag):
-    return "tag_" + re.sub(r'[^a-z0-9]', '_', tag.lower().replace('-', '_')).strip('_')
-
-TAG_PROP_MAP = {tag: _tag_to_prop_name(tag) for tag in ALLOWED_TAGS}
-TAG_NAME_MAP = {v: k for k, v in TAG_PROP_MAP.items()}
+TAG_PROP_MAP = {
+    tag: "tag_" + re.sub(r'[^a-z0-9]', '_', tag.lower().replace('-', '_')).strip('_')
+    for tag in ALLOWED_TAGS
+}
 
 class RARA_PT_Addon_Preferences(bpy.types.AddonPreferences):
     bl_idname = __name__
