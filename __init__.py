@@ -1,5 +1,6 @@
 ﻿# https://docs.blender.org/manual/en/latest/advanced/extensions/getting_started.html
 import re
+import json
 import bpy
 import os
 import subprocess
@@ -14,6 +15,21 @@ bl_info = {
     "blender": (4, 0, 0),
     "description": "开发者工具包，可快速打包插件，便于官网分发",
 }
+
+ALLOWED_TAGS = {
+    "3D View", "Add Curve", "Add Mesh", "All", "Animation", "Bake",
+    "Camera", "Compositing", "Development", "Game Engine", "Geometry Nodes",
+    "Grease Pencil", "Import-Export", "Lighting", "Material", "Mesh",
+    "Modeling", "Node", "Object", "Paint", "Physics", "Pipeline",
+    "Render", "Rigging", "Scene", "Sculpt", "Sequencer", "System",
+    "Text Editor", "Tracking", "UV", "User Interface"
+}
+
+def _tag_to_prop_name(tag):
+    return "tag_" + re.sub(r'[^a-z0-9]', '_', tag.lower().replace('-', '_')).strip('_')
+
+TAG_PROP_MAP = {tag: _tag_to_prop_name(tag) for tag in ALLOWED_TAGS}
+TAG_NAME_MAP = {v: k for k, v in TAG_PROP_MAP.items()}
 
 class RARA_PT_Addon_Preferences(bpy.types.AddonPreferences):
     bl_idname = __name__
@@ -217,8 +233,47 @@ class RARA_OT_Addon_Manifest_Operator(bpy.types.Operator):
         default=f'["{datetime.datetime.now().year} RARA"]',
         description = "【按需修改】插件的版权信息")
     
-    addons_tags: bpy.props.StringProperty(name="插件标签", default="['Object','3D View','Scene']",
+    addons_tags: bpy.props.StringProperty(name="插件标签", default='["Object","3D View","Scene"]',
         description = "【按需修改】插件的类型标签，你可以前往blenderAPI说明页查询支持哪些标签")
+    
+    tags_input_mode: bpy.props.EnumProperty(
+        name="标签输入模式",
+        items=[('TEXT', "文本输入", "直接输入标签列表"), ('BOOLEAN', "布尔选择", "勾选白名单标签")],
+        default='TEXT',
+        update=lambda s, c: s._tags_mode_changed(c))
+
+    tag_3d_view: bpy.props.BoolProperty(name="3D View", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_add_curve: bpy.props.BoolProperty(name="Add Curve", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_add_mesh: bpy.props.BoolProperty(name="Add Mesh", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_all: bpy.props.BoolProperty(name="All", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_animation: bpy.props.BoolProperty(name="Animation", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_bake: bpy.props.BoolProperty(name="Bake", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_camera: bpy.props.BoolProperty(name="Camera", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_compositing: bpy.props.BoolProperty(name="Compositing", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_development: bpy.props.BoolProperty(name="Development", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_game_engine: bpy.props.BoolProperty(name="Game Engine", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_geometry_nodes: bpy.props.BoolProperty(name="Geometry Nodes", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_grease_pencil: bpy.props.BoolProperty(name="Grease Pencil", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_import_export: bpy.props.BoolProperty(name="Import-Export", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_lighting: bpy.props.BoolProperty(name="Lighting", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_material: bpy.props.BoolProperty(name="Material", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_mesh: bpy.props.BoolProperty(name="Mesh", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_modeling: bpy.props.BoolProperty(name="Modeling", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_node: bpy.props.BoolProperty(name="Node", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_object: bpy.props.BoolProperty(name="Object", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_paint: bpy.props.BoolProperty(name="Paint", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_physics: bpy.props.BoolProperty(name="Physics", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_pipeline: bpy.props.BoolProperty(name="Pipeline", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_render: bpy.props.BoolProperty(name="Render", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_rigging: bpy.props.BoolProperty(name="Rigging", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_scene: bpy.props.BoolProperty(name="Scene", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_sculpt: bpy.props.BoolProperty(name="Sculpt", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_sequencer: bpy.props.BoolProperty(name="Sequencer", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_system: bpy.props.BoolProperty(name="System", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_text_editor: bpy.props.BoolProperty(name="Text Editor", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_tracking: bpy.props.BoolProperty(name="Tracking", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_uv: bpy.props.BoolProperty(name="UV", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_user_interface: bpy.props.BoolProperty(name="User Interface", default=False, update=lambda s, c: s._tag_bool_changed(c))
     
     addons_platforms: bpy.props.StringProperty(name="系统平台", default="",
         description = "【按需修改】留空表示全平台支持，如果需要限制平台，可以['windows-arm64','windows-x64']")
@@ -267,7 +322,36 @@ class RARA_OT_Addon_Manifest_Operator(bpy.types.Operator):
         ("wheels", "addons_wheels", "OPTIONAL"),
     ]
     manifest_list = ["tags", "license", "platforms", "wheels", "copyright"]
-    
+
+    def _tag_bool_changed(self, context):
+        selected = []
+        for tag in sorted(ALLOWED_TAGS):
+            prop_name = TAG_PROP_MAP[tag]
+            if getattr(self, prop_name, False):
+                selected.append(tag)
+        self.addons_tags = json.dumps(selected, ensure_ascii=False)
+
+    def _tags_mode_changed(self, context):
+        if self.tags_input_mode != 'BOOLEAN':
+            return
+        try:
+            tags = json.loads(self.addons_tags.replace("'", '"'))
+        except Exception:
+            tags = []
+        if not isinstance(tags, list):
+            tags = []
+        for prop_name in TAG_PROP_MAP.values():
+            try:
+                setattr(self, prop_name, False)
+            except AttributeError:
+                pass
+        for tag in tags:
+            if tag in TAG_PROP_MAP:
+                try:
+                    setattr(self, TAG_PROP_MAP[tag], True)
+                except AttributeError:
+                    pass
+
     def _parse_manifest_toml(self, plugin_path):
         """尝试从插件路径解析已有的 blender_manifest.toml"""
         manifest_path = os.path.join(plugin_path, "blender_manifest.toml")
@@ -492,6 +576,9 @@ class RARA_OT_Addon_Manifest_Operator(bpy.types.Operator):
     def invoke(self, context, event):
         # 第一步：自动填充插件信息
         self._auto_fill_props(context)
+        # 同步标签布尔值（若处于布尔模式）
+        if self.tags_input_mode == 'BOOLEAN':
+            self._tags_mode_changed(context)
         # 第二步：弹出可编辑的属性窗口
         return context.window_manager.invoke_props_dialog(self, width=600)
         
@@ -550,19 +637,8 @@ class RARA_OT_Addon_Manifest_Operator(bpy.types.Operator):
 
         # 标签 (tags) 检查
         if self.addons_tags and self.show_optional:
-            # 官方允许的标签白名单
-            allowed_tags = {
-                "3D View", "Add Curve", "Add Mesh", "All", "Animation", "Bake", 
-                "Camera", "Compositing", "Development", "Game Engine", "Geometry Nodes", 
-                "Grease Pencil", "Import-Export", "Lighting", "Material", "Mesh", 
-                "Modeling", "Node", "Object", "Paint", "Physics", "Pipeline", 
-                "Render", "Rigging", "Scene", "Sculpt", "Sequencer", "System", 
-                "Text Editor", "Tracking", "UV", "User Interface"
-            }
-            # 使用正则提取引号内的所有字符串，例如从 ["Object", "3D Vie99w"] 中提取出 Object 和 3D Vie99w
             input_tags = re.findall(r'["\']([^"\']+)["\']', self.addons_tags)
-            # 找出不在白名单中的非法标签
-            invalid_tags = [tag for tag in input_tags if tag not in allowed_tags]
+            invalid_tags = [tag for tag in input_tags if tag not in ALLOWED_TAGS]
             if invalid_tags:
                 errors.append(f"包含非法标签: {', '.join(invalid_tags)}")
 
@@ -621,6 +697,18 @@ class RARA_OT_Addon_Manifest_Operator(bpy.types.Operator):
         # 分栏显示：必填项 + 可选项（按需显示）
         for manifest in self.manifest_data:
             key, name, type_ = manifest
+            if name == "addons_tags":
+                if self.show_optional:
+                    row = layout.row()
+                    row.prop(self, "tags_input_mode", expand=True)
+                    if self.tags_input_mode == 'BOOLEAN':
+                        box = layout.box()
+                        flow = box.grid_flow(columns=3, even_columns=True, align=True)
+                        for tag in sorted(ALLOWED_TAGS):
+                            flow.prop(self, TAG_PROP_MAP[tag])
+                    else:
+                        layout.prop(self, name)
+                continue
             if self.show_optional:
                 layout.prop(self, name)
             elif type_ == "REQUIRED":
