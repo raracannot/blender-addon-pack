@@ -236,11 +236,8 @@ class RARA_OT_Addon_Manifest_Operator(bpy.types.Operator):
     addons_tags: bpy.props.StringProperty(name="插件标签", default='["Object","3D View","Scene"]',
         description = "【按需修改】插件的类型标签，你可以前往blenderAPI说明页查询支持哪些标签")
     
-    tags_input_mode: bpy.props.EnumProperty(
-        name="标签输入模式",
-        items=[('TEXT', "文本输入", "直接输入标签列表"), ('BOOLEAN', "布尔选择", "勾选白名单标签")],
-        default='TEXT',
-        update=lambda s, c: s._tags_mode_changed(c))
+    show_tags_panel: bpy.props.BoolProperty(name="展开标签", default=False,
+        description = "展开/折叠标签白名单选择")
 
     tag_3d_view: bpy.props.BoolProperty(name="3D View", default=False, update=lambda s, c: s._tag_bool_changed(c))
     tag_add_curve: bpy.props.BoolProperty(name="Add Curve", default=False, update=lambda s, c: s._tag_bool_changed(c))
@@ -331,9 +328,7 @@ class RARA_OT_Addon_Manifest_Operator(bpy.types.Operator):
                 selected.append(tag)
         self.addons_tags = json.dumps(selected, ensure_ascii=False)
 
-    def _tags_mode_changed(self, context):
-        if self.tags_input_mode != 'BOOLEAN':
-            return
+    def _sync_tags_to_bools(self, context):
         try:
             tags = json.loads(self.addons_tags.replace("'", '"'))
         except Exception:
@@ -574,12 +569,8 @@ class RARA_OT_Addon_Manifest_Operator(bpy.types.Operator):
             return {'CANCELLED'}
     
     def invoke(self, context, event):
-        # 第一步：自动填充插件信息
         self._auto_fill_props(context)
-        # 同步标签布尔值（若处于布尔模式）
-        if self.tags_input_mode == 'BOOLEAN':
-            self._tags_mode_changed(context)
-        # 第二步：弹出可编辑的属性窗口
+        self._sync_tags_to_bools(context)
         return context.window_manager.invoke_props_dialog(self, width=600)
         
     def draw(self, context):
@@ -700,14 +691,22 @@ class RARA_OT_Addon_Manifest_Operator(bpy.types.Operator):
             if name == "addons_tags":
                 if self.show_optional:
                     row = layout.row()
-                    row.prop(self, "tags_input_mode", expand=True)
-                    if self.tags_input_mode == 'BOOLEAN':
+                    row.prop(self, "show_tags_panel", icon='TRIA_DOWN' if self.show_tags_panel else 'TRIA_RIGHT',
+                             emboss=False, text="插件标签")
+                    selected_count = 0
+                    if self.addons_tags:
+                        try:
+                            tags_list = json.loads(self.addons_tags.replace("'", '"'))
+                            if isinstance(tags_list, list):
+                                selected_count = len(tags_list)
+                        except Exception:
+                            pass
+                    row.label(text=f"已选 {selected_count} 个" if selected_count else "未选择")
+                    if self.show_tags_panel:
                         box = layout.box()
                         flow = box.grid_flow(columns=3, even_columns=True, align=True)
                         for tag in sorted(ALLOWED_TAGS):
                             flow.prop(self, TAG_PROP_MAP[tag])
-                    else:
-                        layout.prop(self, name)
                 continue
             if self.show_optional:
                 layout.prop(self, name)
