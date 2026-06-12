@@ -217,17 +217,34 @@ class RARA_OT_Addon_Manifest_Operator(bpy.types.Operator):
         default=f'["{datetime.datetime.now().year} RARA"]',
         description = "【按需修改】插件的版权信息")
     
-    addons_tags: bpy.props.StringProperty(name="插件标签", default='["Object","3D View","Scene"]',
+    addons_tags: bpy.props.StringProperty(name="插件标签", default="['Object','3D View','Scene']",
         description = "【按需修改】插件的类型标签，你可以前往blenderAPI说明页查询支持哪些标签")
     
-    addons_platforms: bpy.props.StringProperty(name="系统平台", default='["windows-arm64","windows-x64"]',
-        description = "【按需修改】")
+    addons_platforms: bpy.props.StringProperty(name="系统平台", default="",
+        description = "【按需修改】留空表示全平台支持，如果需要限制平台，可以['windows-arm64','windows-x64']")
     
     addons_wheels: bpy.props.StringProperty(name="插件轮子", default="",
         description = "【按需修改】")
     
-    addons_permissions: bpy.props.StringProperty(name="插件权限", default="",
-        description = "【按需修改】")
+    permission_files: bpy.props.StringProperty(name="文件", default="",
+        description = "解释为何需要文件系统访问权限（≤64字，不以标点结尾）")
+    permission_network: bpy.props.StringProperty(name="网络", default="",
+        description = "解释为何需要网络访问权限（≤64字，不以标点结尾）")
+    permission_clipboard: bpy.props.StringProperty(name="剪贴板", default="",
+        description = "解释为何需要剪贴板访问权限（≤64字，不以标点结尾）")
+    permission_camera: bpy.props.StringProperty(name="摄像头", default="",
+        description = "解释为何需要摄像头访问权限（≤64字，不以标点结尾）")
+    permission_microphone: bpy.props.StringProperty(name="麦克风", default="",
+        description = "解释为何需要麦克风访问权限（≤64字，不以标点结尾）")
+    
+    build_paths_exclude_pattern: bpy.props.StringProperty(
+        name="排除模式",
+        default='["__pycache__/", ".git", "*.zip"]',
+        description = "打包时排除的文件模式（gitignore格式）")
+    build_paths: bpy.props.StringProperty(
+        name="包含路径",
+        default="",
+        description = "打包时包含的相对路径列表（与排除模式互斥，设置后排除模式无效）")
     
     show_optional: bpy.props.BoolProperty(name="显示附加项", default=False,
         description = "展开完整（非必要的）注册信息设置项")
@@ -248,7 +265,6 @@ class RARA_OT_Addon_Manifest_Operator(bpy.types.Operator):
         ("tags", "addons_tags", "OPTIONAL"),
         ("platforms", "addons_platforms", "OPTIONAL"),
         ("wheels", "addons_wheels", "OPTIONAL"),
-        ("permissions", "addons_permissions", "OPTIONAL"),
     ]
     manifest_list = ["tags", "license", "platforms", "wheels", "copyright"]
     
@@ -347,12 +363,36 @@ class RARA_OT_Addon_Manifest_Operator(bpy.types.Operator):
                 if key in manifest_data_dict:
                     val = manifest_data_dict[key]
                     
-                    # 如果解析出来的是列表或字典（比如 tags, platforms, permissions），将其转回字符串以便在 UI 中显示
+                    # 如果解析出来的是列表或字典（比如 tags, platforms），将其转回字符串以便在 UI 中显示
                     if isinstance(val, (list, dict)):
                         val_str = json.dumps(val, ensure_ascii=False)
                         setattr(self, name, val_str)
                     else:
                         setattr(self, name, str(val))
+
+            # 解析 [permissions] section
+            if "permissions" in manifest_data_dict and isinstance(manifest_data_dict["permissions"], dict):
+                perms = manifest_data_dict["permissions"]
+                for key in ["files", "network", "clipboard", "camera", "microphone"]:
+                    if key in perms:
+                        setattr(self, f"permission_{key}", str(perms[key]))
+
+            # 解析 [build] section
+            if "build" in manifest_data_dict and isinstance(manifest_data_dict["build"], dict):
+                build = manifest_data_dict["build"]
+                if "paths_exclude_pattern" in build:
+                    val = build["paths_exclude_pattern"]
+                    if isinstance(val, list):
+                        setattr(self, "build_paths_exclude_pattern", json.dumps(val, ensure_ascii=False))
+                    else:
+                        setattr(self, "build_paths_exclude_pattern", str(val))
+                if "paths" in build:
+                    val = build["paths"]
+                    if isinstance(val, list):
+                        setattr(self, "build_paths", json.dumps(val, ensure_ascii=False))
+                    else:
+                        setattr(self, "build_paths", str(val))
+
             return  # 成功读取 toml 后直接返回，不再解析 bl_info
 
         # ================= 第二步：如果没有 toml，则降级解析 bl_info =================        
@@ -408,16 +448,41 @@ class RARA_OT_Addon_Manifest_Operator(bpy.types.Operator):
                 for manifest in self.manifest_data:
                     key, name, type_ = manifest
                     value = getattr(self, name, "")
-                    # 跳过空的可选字段
                     if type_ == "OPTIONAL" and value == "":
                         continue
-                    # 处理列表类型字段（不需要加引号）
-                    if key in self.manifest_list or key == "permissions":
+                    if key in self.manifest_list:
                         f.write(f'{key} = {value}\n')
-                    # 处理普通字符串字段（加引号）
                     else:
                         f.write(f'{key} = "{value}"\n')
-            
+
+                # ===== [permissions] section =====
+                perm_data = [
+                    ("files", "permission_files"),
+                    ("network", "permission_network"),
+                    ("clipboard", "permission_clipboard"),
+                    ("camera", "permission_camera"),
+                    ("microphone", "permission_microphone"),
+                ]
+                perm_lines = []
+                for perm_key, prop_name in perm_data:
+                    val = getattr(self, prop_name, "").strip()
+                    if val:
+                        perm_lines.append(f'{perm_key} = "{val}"')
+                if perm_lines:
+                    f.write("\n[permissions]\n")
+                    for line in perm_lines:
+                        f.write(line + "\n")
+
+                # ===== [build] section =====
+                build_exclude = getattr(self, "build_paths_exclude_pattern", "").strip()
+                build_paths_val = getattr(self, "build_paths", "").strip()
+                if build_paths_val or build_exclude:
+                    f.write("\n[build]\n")
+                    if build_paths_val:
+                        f.write(f'paths = {build_paths_val}\n')
+                    elif build_exclude:
+                        f.write(f'paths_exclude_pattern = {build_exclude}\n')
+
             self.report({'INFO'}, f"blender_manifest已生成到 {manifest_path}")
             return {'FINISHED'}
         except Exception as e:
@@ -515,13 +580,29 @@ class RARA_OT_Addon_Manifest_Operator(bpy.types.Operator):
                 if invalid_wheels:
                     errors.append(f"wheel 文件必须以 .whl 结尾: {', '.join(invalid_wheels)}")
                     
-        # 权限 (permissions) 检查
-        if getattr(self, "addons_permissions", "") and self.show_optional:
-            perm_str = self.addons_permissions.strip()
-            # 检查是否是字典 {} 或列表 [] 格式
-            if not ((perm_str.startswith('{') and perm_str.endswith('}')) or 
-                    (perm_str.startswith('[') and perm_str.endswith(']'))):
-                errors.append("permissions 必须是字典 {} 或列表 [] 格式")
+        # 各权限说明校验（≤64字，不以标点结尾）
+        if self.show_optional:
+            perm_props = [
+                ("permission_files", "文件权限"),
+                ("permission_network", "网络权限"),
+                ("permission_clipboard", "剪贴板权限"),
+                ("permission_camera", "摄像头权限"),
+                ("permission_microphone", "麦克风权限"),
+            ]
+            for prop_name, label in perm_props:
+                val = getattr(self, prop_name, "").strip()
+                if val:
+                    if len(val) > 64:
+                        errors.append(f"{label}说明过长 ({len(val)}/64)")
+                    if val[-1] in ".,;:!?。，；：！？":
+                        errors.append(f"{label}说明不能以标点结尾")
+
+        # build 路径互斥检查
+        if self.show_optional:
+            build_paths_val = getattr(self, "build_paths", "").strip()
+            build_exclude_val = getattr(self, "build_paths_exclude_pattern", "").strip()
+            if build_paths_val and build_exclude_val:
+                errors.append("包含路径(paths)与排除模式(paths_exclude_pattern)互斥，只能设置其一")
         
         # 插件类型 (type) 检查
         if self.addons_type != 'add-on':
@@ -544,6 +625,21 @@ class RARA_OT_Addon_Manifest_Operator(bpy.types.Operator):
                 layout.prop(self, name)
             elif type_ == "REQUIRED":
                 layout.prop(self, name)
+
+        # 权限（[permissions] section）
+        if self.show_optional:
+            layout.separator()
+            layout.label(text="[permissions] 插件权限声明:", icon='LOCKED')
+            layout.prop(self, "permission_files")
+            layout.prop(self, "permission_network")
+            layout.prop(self, "permission_clipboard")
+            layout.prop(self, "permission_camera")
+            layout.prop(self, "permission_microphone")
+
+            layout.separator()
+            layout.label(text="[build] 打包高级选项:", icon='PACKAGE')
+            layout.prop(self, "build_paths_exclude_pattern")
+            layout.prop(self, "build_paths")
 
 def register():
     bpy.utils.register_class(RARA_PT_Addon_Preferences)
