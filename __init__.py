@@ -239,38 +239,38 @@ class RARA_OT_Addon_Manifest_Operator(bpy.types.Operator):
     show_tags_panel: bpy.props.BoolProperty(name="展开标签", default=False,
         description = "展开/折叠标签白名单选择")
 
-    tag_3d_view: bpy.props.BoolProperty(name="3D View", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_add_curve: bpy.props.BoolProperty(name="Add Curve", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_add_mesh: bpy.props.BoolProperty(name="Add Mesh", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_all: bpy.props.BoolProperty(name="All", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_animation: bpy.props.BoolProperty(name="Animation", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_bake: bpy.props.BoolProperty(name="Bake", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_camera: bpy.props.BoolProperty(name="Camera", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_compositing: bpy.props.BoolProperty(name="Compositing", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_development: bpy.props.BoolProperty(name="Development", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_game_engine: bpy.props.BoolProperty(name="Game Engine", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_geometry_nodes: bpy.props.BoolProperty(name="Geometry Nodes", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_grease_pencil: bpy.props.BoolProperty(name="Grease Pencil", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_import_export: bpy.props.BoolProperty(name="Import-Export", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_lighting: bpy.props.BoolProperty(name="Lighting", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_material: bpy.props.BoolProperty(name="Material", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_mesh: bpy.props.BoolProperty(name="Mesh", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_modeling: bpy.props.BoolProperty(name="Modeling", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_node: bpy.props.BoolProperty(name="Node", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_object: bpy.props.BoolProperty(name="Object", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_paint: bpy.props.BoolProperty(name="Paint", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_physics: bpy.props.BoolProperty(name="Physics", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_pipeline: bpy.props.BoolProperty(name="Pipeline", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_render: bpy.props.BoolProperty(name="Render", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_rigging: bpy.props.BoolProperty(name="Rigging", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_scene: bpy.props.BoolProperty(name="Scene", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_sculpt: bpy.props.BoolProperty(name="Sculpt", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_sequencer: bpy.props.BoolProperty(name="Sequencer", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_system: bpy.props.BoolProperty(name="System", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_text_editor: bpy.props.BoolProperty(name="Text Editor", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_tracking: bpy.props.BoolProperty(name="Tracking", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_uv: bpy.props.BoolProperty(name="UV", default=False, update=lambda s, c: s._tag_bool_changed(c))
-    tag_user_interface: bpy.props.BoolProperty(name="User Interface", default=False, update=lambda s, c: s._tag_bool_changed(c))
+    tag_3d_view: bpy.props.BoolProperty(name="3D View", default=False)
+    tag_add_curve: bpy.props.BoolProperty(name="Add Curve", default=False)
+    tag_add_mesh: bpy.props.BoolProperty(name="Add Mesh", default=False)
+    tag_all: bpy.props.BoolProperty(name="All", default=False)
+    tag_animation: bpy.props.BoolProperty(name="Animation", default=False)
+    tag_bake: bpy.props.BoolProperty(name="Bake", default=False)
+    tag_camera: bpy.props.BoolProperty(name="Camera", default=False)
+    tag_compositing: bpy.props.BoolProperty(name="Compositing", default=False)
+    tag_development: bpy.props.BoolProperty(name="Development", default=False)
+    tag_game_engine: bpy.props.BoolProperty(name="Game Engine", default=False)
+    tag_geometry_nodes: bpy.props.BoolProperty(name="Geometry Nodes", default=False)
+    tag_grease_pencil: bpy.props.BoolProperty(name="Grease Pencil", default=False)
+    tag_import_export: bpy.props.BoolProperty(name="Import-Export", default=False)
+    tag_lighting: bpy.props.BoolProperty(name="Lighting", default=False)
+    tag_material: bpy.props.BoolProperty(name="Material", default=False)
+    tag_mesh: bpy.props.BoolProperty(name="Mesh", default=False)
+    tag_modeling: bpy.props.BoolProperty(name="Modeling", default=False)
+    tag_node: bpy.props.BoolProperty(name="Node", default=False)
+    tag_object: bpy.props.BoolProperty(name="Object", default=False)
+    tag_paint: bpy.props.BoolProperty(name="Paint", default=False)
+    tag_physics: bpy.props.BoolProperty(name="Physics", default=False)
+    tag_pipeline: bpy.props.BoolProperty(name="Pipeline", default=False)
+    tag_render: bpy.props.BoolProperty(name="Render", default=False)
+    tag_rigging: bpy.props.BoolProperty(name="Rigging", default=False)
+    tag_scene: bpy.props.BoolProperty(name="Scene", default=False)
+    tag_sculpt: bpy.props.BoolProperty(name="Sculpt", default=False)
+    tag_sequencer: bpy.props.BoolProperty(name="Sequencer", default=False)
+    tag_system: bpy.props.BoolProperty(name="System", default=False)
+    tag_text_editor: bpy.props.BoolProperty(name="Text Editor", default=False)
+    tag_tracking: bpy.props.BoolProperty(name="Tracking", default=False)
+    tag_uv: bpy.props.BoolProperty(name="UV", default=False)
+    tag_user_interface: bpy.props.BoolProperty(name="User Interface", default=False)
     
     addons_platforms: bpy.props.StringProperty(name="系统平台", default="",
         description = "【按需修改】留空表示全平台支持，如果需要限制平台，可以['windows-arm64','windows-x64']")
@@ -320,7 +320,7 @@ class RARA_OT_Addon_Manifest_Operator(bpy.types.Operator):
     ]
     manifest_list = ["tags", "license", "platforms", "wheels", "copyright"]
 
-    def _tag_bool_changed(self, context):
+    def _sync_bools_to_tags(self):
         selected = []
         for tag in sorted(ALLOWED_TAGS):
             prop_name = TAG_PROP_MAP[tag]
@@ -519,6 +519,7 @@ class RARA_OT_Addon_Manifest_Operator(bpy.types.Operator):
             self.addons_tagline = f"{bl_info['name']} - Blender插件"
     
     def execute(self, context):
+        self._sync_bools_to_tags()
         plugin_path = context.scene.rara_plugin_path
         manifest_path = os.path.join(plugin_path, "blender_manifest.toml")
 
